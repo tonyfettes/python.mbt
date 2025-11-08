@@ -21,17 +21,16 @@ jobs:
       - name: Setup Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Verify Python installation
         run: |
           python3 --version
           python3 -c "import sys; print(f'Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"
 
-      # TODO: remove bleeding
       - name: Install Moonbit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s nightly
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
 
       - name: Moon version
@@ -110,50 +109,3 @@ jobs:
             fi
           done
           (exit $_passed)
-
-  nightly-check:
-    continue-on-error: true
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python 3.13
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13'
-
-      - name: Install Moonbit (nightly)
-        run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s nightly
-          echo "$HOME/.moon/bin" >> $GITHUB_PATH
-
-      - name: Moon version
-        run: |
-          moon version --all
-          moonrun --version
-
-      - name: Set ulimit and run moon test
-        run: |
-          ulimit -s 8176
-          moon test --target native
-          moon test --target native --release
-
-      - name: Moon test --target native --doc
-        run: |
-          moon test --target native --doc
-
-      - name: Moon check --target native
-        run: moon check --target native
-
-      - name: Moon info
-        run: |
-          moon info --target native
-          git diff
-
-      - name: Format diff
-        run: |
-          moon fmt
-          git diff 

@@ -4,8 +4,12 @@
   "native-stub": ["wrap.c"],
   "link": {
     "native": {
+      "cc": "${build.CC}",
+      "cc-flags": "${build.CC_FLAGS}",
+      "cc-link-flags": "${build.CC_LINK_FLAGS}",
       "stub-cc": "${build.CC}",
-      "stub-cc-flags": "${build.STUB_CC_FLAGS}"
+      "stub-cc-flags": "${build.STUB_CC_FLAGS}",
+      "stub-cc-link-flags": "${build.STUB_CC_LINK_FLAGS}"
     }
   }
 }
