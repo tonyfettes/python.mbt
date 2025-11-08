@@ -14,7 +14,7 @@ fn strip_quot(String) -> String
 
 // Errors
 pub suberror PyRuntimeError {
-  TypeMisMatchError
+  TypeMismatchError
   IndexOutOfBoundsError
   KeyIsUnHashableError
   InVokeError
@@ -211,4 +211,3 @@ pub trait IsPyObject {
   obj_ref(Self) -> @cpython.PyObjectRef
   type_name(Self) -> String
 }
-
