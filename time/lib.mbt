@@ -51,7 +51,7 @@ fn get_lib() -> () -> TimeModule {
 ///|
 pub fn sleep(seconds : Double) -> Unit raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("sleep") is Some(PyCallable(f))
+  guard lib.time.try_get_attr("sleep") is Some(PyCallable(f))
   let args = PyTuple::new(1)
   args..set(0, PyFloat::from(seconds))
   let _ = f.invoke(args~)
@@ -63,7 +63,7 @@ pub fn sleep(seconds : Double) -> Unit raise @python.PyRuntimeError {
 /// Corresponds to `time.time()` in Python.
 pub fn time() -> Double raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("time") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("time") is Some(PyCallable(f)) else {
     // Consider how to handle errors, e.g., return a specific error or panic
     println("Error: Could not get time.time function") // Placeholder error value
     return 0.0
@@ -80,7 +80,7 @@ pub fn time() -> Double raise @python.PyRuntimeError {
 /// Corresponds to `time.time_ns()` in Python.
 pub fn time_ns() -> Int64 raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("time_ns") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("time_ns") is Some(PyCallable(f)) else {
     println("Error: Could not get time.time_ns function") // Placeholder error value
     return 0L
   }
@@ -96,7 +96,7 @@ pub fn time_ns() -> Int64 raise @python.PyRuntimeError {
 /// Corresponds to `time.monotonic()` in Python.
 pub fn monotonic() -> Double raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("monotonic") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("monotonic") is Some(PyCallable(f)) else {
     println("Error: Could not get time.monotonic function")
     return 0.0
   }
@@ -112,7 +112,7 @@ pub fn monotonic() -> Double raise @python.PyRuntimeError {
 /// Corresponds to `time.monotonic_ns()` in Python.
 pub fn monotonic_ns() -> Int64 raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("monotonic_ns") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("monotonic_ns") is Some(PyCallable(f)) else {
     println("Error: Could not get time.monotonic_ns function")
     return 0L
   }
@@ -128,7 +128,7 @@ pub fn monotonic_ns() -> Int64 raise @python.PyRuntimeError {
 /// Corresponds to `time.perf_counter()` in Python.
 pub fn perf_counter() -> Double raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("perf_counter") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("perf_counter") is Some(PyCallable(f)) else {
     println("Error: Could not get time.perf_counter function")
     return 0.0
   }
@@ -144,7 +144,7 @@ pub fn perf_counter() -> Double raise @python.PyRuntimeError {
 /// Corresponds to `time.perf_counter_ns()` in Python.
 pub fn perf_counter_ns() -> Int64 raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("perf_counter_ns") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("perf_counter_ns") is Some(PyCallable(f)) else {
     println("Error: Could not get time.perf_counter_ns function")
     return 0L
   }
@@ -160,7 +160,7 @@ pub fn perf_counter_ns() -> Int64 raise @python.PyRuntimeError {
 /// Corresponds to `time.process_time()` in Python.
 pub fn process_time() -> Double raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("process_time") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("process_time") is Some(PyCallable(f)) else {
     println("Error: Could not get time.process_time function")
     return 0.0
   }
@@ -176,7 +176,7 @@ pub fn process_time() -> Double raise @python.PyRuntimeError {
 /// Corresponds to `time.process_time_ns()` in Python.
 pub fn process_time_ns() -> Int64 raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("process_time_ns") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("process_time_ns") is Some(PyCallable(f)) else {
     println("Error: Could not get time.process_time_ns function")
     return 0L
   }
@@ -193,7 +193,7 @@ pub fn process_time_ns() -> Int64 raise @python.PyRuntimeError {
 /// Corresponds to `time.ctime([secs])` in Python.
 pub fn ctime(secs_option : Double?) -> String raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.get_attr("ctime") is Some(PyCallable(f)) else {
+  guard lib.time.try_get_attr("ctime") is Some(PyCallable(f)) else {
     println("Error: Could not get time.ctime function") // Placeholder error value
     return ""
   }

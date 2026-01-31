@@ -93,7 +93,7 @@ pub fn PyModule::get_name(self : PyModule) -> String {
   if self.name is Some(n) {
     return n
   }
-  let attr = self.get_attr("__name__")
+  let attr = self.try_get_attr("__name__")
   if attr is None {
     println("module has no attribute __name__")
     panic()
@@ -120,7 +120,7 @@ pub fn PyModule::dump(self : PyModule) -> Unit {
 ///
 /// ```moonbit
 /// let collections = pyimport("collections").unwrap()
-/// guard collections.get_attr("Counter").unwrap() is PyCallable(counter)
+/// guard collections.try_get_attr("Counter").unwrap() is PyCallable(counter)
 ///
 /// let list = [1L, 2L, 2L, 3L, 3L, 3L].map(PyInteger::from) |> PyList::from
 /// let args = PyTuple::new(1)
@@ -128,7 +128,7 @@ pub fn PyModule::dump(self : PyModule) -> Unit {
 /// guard counter.invoke(args~) is Some(PyDict(cnt))
 /// inspect(cnt, content="Counter({3: 3, 2: 2, 1: 1})")
 ///
-/// guard cnt.obj().get_attr("total") is Some(PyCallable(total))
+/// guard cnt.obj().try_get_attr("total") is Some(PyCallable(total))
 /// inspect(total.invoke().unwrap(), content="PyInteger(6)")
 /// ```
 /// 
@@ -145,7 +145,7 @@ pub fn PyModule::dump(self : PyModule) -> Unit {
 /// total = cnt.total()
 /// print(total) # 6
 /// ```
-pub fn PyModule::get_attr(
+pub fn PyModule::try_get_attr(
   self : PyModule,
   attr : String,
   print_err? : Bool = false,

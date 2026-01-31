@@ -85,7 +85,7 @@ fn main {
   guard @python.pyimport("collections") is Some(collections)
 
   // It's equivalent to `from collections import Counter`
-  guard collections.get_attr("Counter") is Some(PyCallable(counter))
+  guard collections.try_get_attr("Counter") is Some(PyCallable(counter))
 
   let args = PyTuple::new(1)
   args.. set(0, py_nums)
@@ -213,7 +213,7 @@ fn main {
   guard @python.pyimport("collections") is Some(collections)
 
   // It's equivalent to `from collections import Counter`
-  guard collections.get_attr("Counter") is Some(PyCallable(counter))
+  guard collections.try_get_attr("Counter") is Some(PyCallable(counter))
 
   let args = PyTuple::new(1)
   args.. set(0, py_nums)

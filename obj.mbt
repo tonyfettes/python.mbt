@@ -120,7 +120,7 @@ pub fn PyObject::type_name(self : PyObject) -> String {
 }
 
 ///|
-pub fn PyObject::get_attr(
+pub fn PyObject::try_get_attr(
   self : PyObject,
   attr : String,
   print_err? : Bool = false,

@@ -1,32 +1,36 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Kaida-Amethyst/python/time"
 
+import {
+  "Kaida-Amethyst/python",
+}
+
 // Values
-fn ctime(Double?) -> String
+pub fn ctime(Double?) -> String raise @python.PyRuntimeError
 
-fn monotonic() -> Double
+pub fn monotonic() -> Double raise @python.PyRuntimeError
 
-fn monotonic_ns() -> Int64
+pub fn monotonic_ns() -> Int64 raise @python.PyRuntimeError
 
-fn perf_counter() -> Double
+pub fn perf_counter() -> Double raise @python.PyRuntimeError
 
-fn perf_counter_ns() -> Int64
+pub fn perf_counter_ns() -> Int64 raise @python.PyRuntimeError
 
-fn process_time() -> Double
+pub fn process_time() -> Double raise @python.PyRuntimeError
 
-fn process_time_ns() -> Int64
+pub fn process_time_ns() -> Int64 raise @python.PyRuntimeError
 
-fn sleep(Double) -> Unit
+pub fn sleep(Double) -> Unit raise @python.PyRuntimeError
 
-fn time() -> Double
+pub fn time() -> Double raise @python.PyRuntimeError
 
-fn time_ns() -> Int64
+pub fn time_ns() -> Int64 raise @python.PyRuntimeError
 
 // Errors
 pub suberror TurtleError {
   LoadTimeModuleError
 }
-impl Show for TurtleError
+pub impl Show for TurtleError
 
 // Types and methods
 pub struct TimeModule {

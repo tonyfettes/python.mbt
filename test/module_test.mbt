@@ -18,9 +18,9 @@ test "Module Test" {
   assert_true(os is Some(_))
   let os = os.unwrap()
   inspect(os.get_name(), content="os")
-  guard os.get_attr("name").unwrap() is PyString(s)
+  guard os.try_get_attr("name").unwrap() is PyString(s)
   assert_true(["posix", "nt", "java"].contains(s.to_string()))
-  assert_true(os.get_attr("listdir") is Some(PyCallable(_)))
+  assert_true(os.try_get_attr("listdir") is Some(PyCallable(_)))
 
   /// ```python
   /// import collections
@@ -32,7 +32,7 @@ test "Module Test" {
   /// ```python
   /// from collections import Counter
   /// ```
-  guard collections.get_attr("Counter").unwrap() is PyCallable(counter)
+  guard collections.try_get_attr("Counter").unwrap() is PyCallable(counter)
 
   // ```python
   // elements = [1, 2, 2, 3, 3, 3]
@@ -48,7 +48,7 @@ test "Module Test" {
   // ```python
   // print(cnt.total()) # Output: 6
   // ```
-  guard cnt.obj().get_attr("total") is Some(PyCallable(total))
+  guard cnt.obj().try_get_attr("total") is Some(PyCallable(total))
   let args = PyTuple::new(0)
   inspect(total.invoke(args~).unwrap(), content="PyInteger(6)")
 }
