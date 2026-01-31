@@ -168,6 +168,17 @@ pub fn PyModule::try_get_attr(
 }
 
 ///|
+pub fn PyModule::get_attr(
+  self : PyModule,
+  attr : String,
+) -> PyObjectEnum raise PyRuntimeError {
+  match self.try_get_attr(attr) {
+    Some(obj) => obj
+    None => raise AttributeError(self.get_name(), attr)
+  }
+}
+
+///|
 pub impl IsPyObject for PyModule with obj(self) {
   self.obj
 }

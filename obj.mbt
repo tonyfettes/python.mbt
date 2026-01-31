@@ -138,6 +138,17 @@ pub fn PyObject::try_get_attr(
 }
 
 ///|
+pub fn PyObject::get_attr(
+  self : PyObject,
+  attr : String,
+) -> PyObjectEnum raise PyRuntimeError {
+  match self.try_get_attr(attr) {
+    Some(obj) => obj
+    None => raise AttributeError(self.to_string(), attr)
+  }
+}
+
+///|
 pub impl IsPyObject for PyObject with obj(self) {
   self
 }
