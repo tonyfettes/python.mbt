@@ -82,24 +82,24 @@ int py_is_true(PyObject *obj) { return 0 != Py_IsTrue(obj); };
 
 int py_is_false(PyObject *obj) { return 0 == Py_IsTrue(obj); }
 
-PyObject* py_import_import_module(const char* name) {
+PyObject *py_import_import_module(const char *name) {
   PyObject *module = PyImport_ImportModule(name);
   return module;
 }
 
-moonbit_string_t py_unicode_as_moonbit_string(PyObject* obj) {
-  void* data = PyUnicode_DATA(obj);
+moonbit_string_t py_unicode_as_moonbit_string(PyObject *obj) {
+  void *data = PyUnicode_DATA(obj);
   int64_t len = PyUnicode_GET_LENGTH(obj);
   moonbit_string_t ms = moonbit_make_string(len, 0);
   if (PyUnicode_KIND(obj) == PyUnicode_2BYTE_KIND) {
     memcpy(ms, data, len * 2);
   } else if (PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND) {
     for (int i = 0; i < len; i++) {
-      ms[i] = (uint16_t)(((Py_UCS1*)data)[i]);
+      ms[i] = (uint16_t)(((Py_UCS1 *)data)[i]);
     }
   } else { // PyUnicode_4BYTE_KIND
     for (int i = 0; i < len; i++) {
-      ms[i] = (uint16_t)(((Py_UCS4*)data)[i]);
+      ms[i] = (uint16_t)(((Py_UCS4 *)data)[i]);
     }
   }
   return ms;
