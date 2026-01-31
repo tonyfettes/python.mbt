@@ -58,11 +58,11 @@ fn get_lib() -> () -> Turtle {
 }
 
 ///|
-pub fn bgcolor(color : Color) -> Unit {
+pub fn bgcolor(color : Color) -> Unit raise @python.PyRuntimeError {
   let lib = singleton()
   guard lib.turtle.get_attr("bgcolor") is Some(PyCallable(bgcolor))
   let args = PyTuple::new(1)
   args..set(0, PyString::from(color.to_string()))
-  let _ = try? bgcolor.invoke(args~)
+  let _ = bgcolor.invoke(args~)
   ()
 }

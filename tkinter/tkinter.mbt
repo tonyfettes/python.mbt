@@ -79,45 +79,44 @@ fn get_lib() -> () -> Tkinter {
 }
 
 ///|
-pub fn Window::new() -> Window {
+pub fn Window::new() -> Window raise @python.PyRuntimeError {
   let lib = singleton()
   guard lib.tkinter.get_attr("Tk") is Some(PyCallable(createWindow))
-  guard (try? createWindow.invoke()).unwrap() is Some(PyClass(window))
+  guard createWindow.invoke() is Some(PyClass(window))
   Window::{ window, }
 }
 
 ///|
-pub fn Window::set_title(self : Window, title : String) -> Unit {
+pub fn Window::set_title(self : Window, title : String) -> Unit raise @python.PyRuntimeError {
   guard self.window.get_attr("title") is Some(PyCallable(setTitle))
   let args = PyTuple::new(1)
   args..set(0, PyString::from(title))
-  let _ = try? setTitle.invoke(args~)
+  let _ = setTitle.invoke(args~)
 
 }
 
 ///|
-pub fn Window::mainloop(self : Window) -> Unit {
+pub fn Window::mainloop(self : Window) -> Unit raise @python.PyRuntimeError {
   guard self.window.get_attr("mainloop") is Some(PyCallable(mainloop))
-  let _ = try? mainloop.invoke()
+  let _ = mainloop.invoke()
 
 }
 
 ///|
-pub fn Label::new(window : Window, text : String) -> Label {
+pub fn Label::new(window : Window, text : String) -> Label raise @python.PyRuntimeError {
   let lib = singleton()
   guard lib.tkinter.get_attr("Label") is Some(PyCallable(createLabel))
   let args = PyTuple::new(1)
   args..set(0, window.window)
   let kwargs = PyDict::new()
   kwargs..set("text", PyString::from(text))
-  guard (try? createLabel.invoke(args~, kwargs~)).unwrap()
-    is Some(PyClass(label))
+  guard createLabel.invoke(args~, kwargs~) is Some(PyClass(label))
   Label::{ label, }
 }
 
 ///|
-pub fn Label::pack(self : Label) -> Unit {
+pub fn Label::pack(self : Label) -> Unit raise @python.PyRuntimeError {
   guard self.label.get_attr("pack") is Some(PyCallable(pack))
-  let _ = try? pack.invoke()
+  let _ = pack.invoke()
 
 }

@@ -31,7 +31,15 @@ fn main {
   args..set(0, py_nums)
 
   // It's equivalent to `cnt = Counter(nums)`
-  guard (try? counter.invoke(args~)) is Ok(Some(cnt))
+  let result = try {
+    counter.invoke(args~)
+  } catch {
+    e => {
+      println(e)
+      return
+    }
+  }
+  guard result is Some(cnt)
   guard cnt is PyDict(cnt)
 
   // `print(cnt)`
