@@ -17,6 +17,6 @@ pub suberror PyRuntimeError {
   TypeMismatchError
   IndexOutOfBoundsError
   KeyIsUnHashableError
-  InVokeError
+  InvokeError
   AttributeError(String, String) // (object_repr, attr_name)
 } derive(Show)

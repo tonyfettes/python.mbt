@@ -81,7 +81,7 @@ pub fn PyCallable::invoke(
         @cpython.py_err_print()
       }
       @cpython.py_err_clear()
-      raise InVokeError
+      raise InvokeError
     }
   }
   unless(@cpython.py_none_check(obj_ref), fn() {
