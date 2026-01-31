@@ -44,7 +44,7 @@ fn Pen::get_method(self : Pen, name : String) -> PyCallable? {
 /// This Moonbit function creates a new `turtle.Pen()` instance.
 pub fn Pen::new() -> Pen raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.turtle.try_get_attr("Pen") is Some(PyCallable(createPen))
+  guard lib.turtle.get_attr("Pen") is PyCallable(createPen)
   guard createPen.invoke() is Some(PyClass(pen))
   Pen::{ pen, methods: Map::new() }
 }

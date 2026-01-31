@@ -51,7 +51,7 @@ fn get_lib() -> () -> TimeModule {
 ///|
 pub fn sleep(seconds : Double) -> Unit raise @python.PyRuntimeError {
   let lib = singleton()
-  guard lib.time.try_get_attr("sleep") is Some(PyCallable(f))
+  guard lib.time.get_attr("sleep") is PyCallable(f)
   let args = PyTuple::new(1)
   args..set(0, PyFloat::from(seconds))
   let _ = f.invoke(args~)
