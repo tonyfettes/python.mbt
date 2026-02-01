@@ -107,7 +107,10 @@ pub fn PyDict::len(self : PyDict) -> Int {
 pub fn PyDict::get(self : PyDict, key : String) -> PyObjectEnum? {
   let dict = self.obj_ref()
   let obj_ref = @cpython.py_dict_get_item_string(dict, key)
-  when(not(obj_ref.is_null()), fn() { PyObjectEnum::create_by_ref(obj_ref) })
+  when(not(obj_ref.is_null()), fn() {
+    @cpython.py_incref(obj_ref) // PyDict_GetItemString returns borrowed reference
+    PyObjectEnum::create_by_ref(obj_ref)
+  })
 }
 
 ///|
@@ -115,7 +118,10 @@ pub fn PyDict::get(self : PyDict, key : String) -> PyObjectEnum? {
 pub fn PyDict::getByObj(self : PyDict, key : PyObject) -> PyObjectEnum? {
   let dict = self.obj_ref()
   let obj_ref = @cpython.py_dict_get_item(dict, key.obj_ref())
-  when(not(obj_ref.is_null()), fn() { PyObjectEnum::create_by_ref(obj_ref) })
+  when(not(obj_ref.is_null()), fn() {
+    @cpython.py_incref(obj_ref) // PyDict_GetItem returns borrowed reference
+    PyObjectEnum::create_by_ref(obj_ref)
+  })
 }
 
 ///|

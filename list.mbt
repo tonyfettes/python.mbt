@@ -176,9 +176,9 @@ pub fn[T : IsPyObject] PyList::from(items : Array[T]) -> PyList {
 /// ```
 pub fn PyList::get(self : PyList, idx : Int) -> PyObjectEnum? {
   when(idx >= 0 && idx < self.len(), fn() {
-    @cpython.py_list_get_item(self.obj_ref(), idx.to_int64())
-    |> PyObject::create
-    |> PyObjectEnum::create
+    let item = @cpython.py_list_get_item(self.obj_ref(), idx.to_int64())
+    @cpython.py_incref(item) // PyList_GetItem returns borrowed reference
+    item |> PyObject::create |> PyObjectEnum::create
   })
 }
 
@@ -228,6 +228,7 @@ pub fn[T : IsPyObject] PyList::set(
   item : T,
 ) -> Unit raise PyRuntimeError {
   guard idx >= 0 && idx < self.len() else { raise IndexOutOfBoundsError }
+  @cpython.py_incref(item.obj_ref()) // PyList_SetItem steals reference
   let _ = @cpython.py_list_set_item(
     self.obj_ref(),
     idx.to_int64(),
