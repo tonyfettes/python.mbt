@@ -44,6 +44,8 @@ void py_incref(PyObject *obj) { Py_INCREF(obj); }
 
 void py_decref(PyObject *obj) { Py_DECREF(obj); }
 
+int64_t py_refcnt(PyObject *obj) { return Py_REFCNT(obj); }
+
 int Moonbit_PyObjectRef_is_null(PyObject *obj) { return obj == NULL; }
 
 PyTypeObject *py_type(PyObject *obj) { return obj->ob_type; }

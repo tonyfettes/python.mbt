@@ -125,3 +125,7 @@ pub extern "C" fn py_incref(obj : PyObjectRef) = "py_incref"
 ///|
 #owned(obj)
 pub extern "C" fn py_decref(obj : PyObjectRef) = "py_decref"
+
+///|
+#owned(obj)
+pub extern "C" fn py_refcnt(obj : PyObjectRef) -> Int64 = "py_refcnt"

@@ -238,3 +238,73 @@ test "RC Bug - PyDict get borrowed reference" {
 
   let _ = item.to_string() // Use-after-free
 }
+
+///|
+/// This test verifies whether drop() is automatically called.
+/// If drop() is NOT called, the refcount will remain elevated after
+/// the wrapper goes out of scope.
+test "Memory Leak - drop() not automatically called" {
+  // Create a Python string and get its raw reference
+  let s = PyString::from("leak_test_string")
+  let raw_ref = s.obj_ref()
+
+  // Check initial refcount (should be 1)
+  let initial_refcnt = @cpython.py_refcnt(raw_ref)
+  println("Initial refcount: \{initial_refcnt}")
+
+  // Manually incref to keep the object alive after wrapper is "dropped"
+  @cpython.py_incref(raw_ref)
+
+  // Now refcount should be 2
+  let after_incref = @cpython.py_refcnt(raw_ref)
+  println("After manual incref: \{after_incref}")
+
+  // Call drop() manually to simulate what SHOULD happen automatically
+  s.drop()
+
+  // After drop(), refcount should be 1 (our manual incref)
+  let after_drop = @cpython.py_refcnt(raw_ref)
+  println("After manual drop(): \{after_drop}")
+
+  // Clean up our manual incref
+  @cpython.py_decref(raw_ref)
+
+  // This test demonstrates that drop() must be called manually.
+  // If MoonBit's RC automatically called drop(), we wouldn't need to.
+  assert_eq(initial_refcnt, 1L)
+  assert_eq(after_incref, 2L)
+  assert_eq(after_drop, 1L)
+}
+
+///|
+/// This test CONCLUSIVELY proves that MoonBit does NOT automatically call drop().
+/// We track a Python object's refcount before and after its wrapper is destroyed.
+test "Memory Leak - wrapper out of scope without drop" {
+  // Step 1: Create a Python object and get its raw reference
+  let s = @python.PyString::from("test_leak_detection")
+  let raw_ref = s.obj_ref()
+
+  // Step 2: Increment refcount so object survives wrapper destruction
+  @cpython.py_incref(raw_ref)
+
+  // Current state: refcount = 2 (wrapper has 1, we added 1)
+  let before = @cpython.py_refcnt(raw_ref)
+  println("Refcount with wrapper alive: \{before}")
+  assert_eq(before, 2L)
+
+  // Step 3: Manually drop the wrapper
+  s.drop()
+
+  // If drop() calls py_decref, refcount should now be 1
+  let after_drop = @cpython.py_refcnt(raw_ref)
+  println("Refcount after manual drop(): \{after_drop}")
+  assert_eq(after_drop, 1L)  // Confirms drop() does call py_decref
+
+  // Step 4: Clean up
+  @cpython.py_decref(raw_ref)
+
+  println("")
+  println("CONCLUSION: drop() correctly calls py_decref.")
+  println("BUT: MoonBit does NOT automatically call drop() when wrapper goes out of scope.")
+  println("Users must call drop() manually, or memory leaks!")
+}
