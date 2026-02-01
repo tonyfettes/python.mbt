@@ -19,6 +19,7 @@ type CStr // const char*
 type CWStr // const wchar_t*
 
 ///|
+#external
 type PyObjectRef // PyObject*
 
 ///|
