@@ -140,3 +140,101 @@ test "PyDict Test" {
   let e = try? dict.setByObj(list, PyInteger::from(42))
   inspect(e, content="Err(KeyIsUnHashableError)")
 }
+
+///|
+/// This test demonstrates the RC bug in PyList::set().
+/// PyList_SetItem() steals the reference, but the MoonBit wrapper
+/// still holds it. When we call drop(), it will DECREF an already
+/// stolen reference, causing a double-free.
+test "RC Bug - PyList set steals reference" {
+  let list = PyList::new()
+  list.append(PyString::from("placeholder"))
+
+  // Use a string (not cached like small integers)
+  let item = PyString::from("unique_string_not_cached_12345")
+  list.set(0, item) // PyList_SetItem steals reference
+
+  // Now: list owns the ref, but `item` still thinks it owns it too
+  // This causes a double-decref when we explicitly drop
+  item.drop() // BOOM: double-decref on already-stolen ref
+
+  // If we get here, the memory is corrupted
+  let _ = list[0].to_string()
+}
+
+///|
+/// This test demonstrates the RC bug in PyList::get().
+/// PyList_GetItem() returns a borrowed reference, but we wrap it
+/// as owned without INCREF. When the original is freed, we have a
+/// dangling pointer.
+test "RC Bug - PyList get borrowed reference" {
+  let list = PyList::new()
+  // Use unique string to avoid Python string interning
+  list.append(PyString::from("unique_list_get_test_string_12345"))
+
+  let item = list.get(0).unwrap() // Borrowed ref, no INCREF
+
+  // Force the original string to be freed by replacing it
+  list.set(0, PyString::from("replacement_string"))
+
+  // Trigger use-after-free by accessing the freed memory
+  // Need to force memory reuse to make ASan detect it
+  for i in 0..<100 {
+    let _ = PyString::from("allocate_\{i}_to_reuse_memory")
+  }
+
+  // Access the dangling pointer - should trigger ASan
+  let _ = item.to_string()
+}
+
+///|
+/// This test demonstrates the RC bug in PyTuple::set().
+/// PyTuple_SetItem() steals the reference, but the MoonBit wrapper
+/// still holds it. When we call drop(), it will DECREF an already
+/// stolen reference.
+test "RC Bug - PyTuple set steals reference" {
+  let tuple = PyTuple::new(1)
+  tuple.set(0, PyString::from("placeholder"))
+
+  let item = PyString::from("unique_tuple_set_string_67890")
+  tuple.set(0, item) // PyTuple_SetItem steals reference
+  item.drop() // BOOM: double-decref on stolen ref
+
+  let _ = tuple[0].to_string()
+}
+
+///|
+/// This test demonstrates the RC bug in PyTuple::get().
+/// PyTuple_GetItem() returns a borrowed reference, but we wrap it
+/// as owned without INCREF.
+test "RC Bug - PyTuple get borrowed reference" {
+  let tuple = PyTuple::new(1)
+  tuple.set(0, PyString::from("unique_tuple_get_string_11111"))
+
+  let item = tuple.get(0).unwrap() // Borrowed ref
+  tuple.set(0, PyString::from("replacement")) // Replace - original freed
+
+  for i in 0..<100 {
+    let _ = PyString::from("force_reuse_\{i}")
+  }
+
+  let _ = item.to_string() // Use-after-free
+}
+
+///|
+/// This test demonstrates the RC bug in PyDict::get().
+/// PyDict_GetItemString() returns a borrowed reference, but we wrap it
+/// as owned without INCREF.
+test "RC Bug - PyDict get borrowed reference" {
+  let dict = PyDict::new()
+  dict.set("key", PyString::from("unique_dict_get_value_22222"))
+
+  let item = dict.get("key").unwrap() // Borrowed ref
+  dict.set("key", PyString::from("replacement")) // Replace - original freed
+
+  for i in 0..<100 {
+    let _ = PyString::from("force_reuse_\{i}")
+  }
+
+  let _ = item.to_string() // Use-after-free
+}
