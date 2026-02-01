@@ -13,11 +13,15 @@ moon test --target native
 
 ## Filtering Tests
 
-- `-F <pattern>`: Filter by test name
+- `-F <pattern>`: Filter by test name using glob patterns (`*` matches any sequence, `?` matches single char)
 - `-f <file>`: Filter by file name
 
 ```bash
-moon test -p Kaida-Amethyst/python/test -F "test name" --target native
+# Exact test name
+moon test -p Kaida-Amethyst/python/test -F "PyInteger Test" --target native
+
+# Glob pattern - all RC Bug tests
+moon test -p Kaida-Amethyst/python/test -F "RC Bug*" --target native
 ```
 
 ## Package Selection
@@ -45,8 +49,10 @@ Python uses pymalloc, a custom memory allocator that pools memory. ASan cannot d
 To detect Python memory bugs (RC bugs, use-after-free), force Python to use system malloc:
 
 ```bash
-PYTHONMALLOC=malloc moon test -p Kaida-Amethyst/python/test -F "RC Bug" --target native --release
+PYTHONMALLOC=malloc moon test -p Kaida-Amethyst/python/test -F "RC Bug*" --target native --release
 ```
+
+**Warning:** `PYTHONMALLOC=malloc` causes false positives due to MoonBit's RC system. MoonBit reads 8 bytes before object pointers to access reference counts (`Moonbit_object_header(ptr) = ptr - 1`). When `PyObjectRef` (raw Python pointer) is stored in a MoonBit struct, the compiler incorrectly tries to apply MoonBit RC to it, reading into ASan's red zones. This is a MoonBit limitation - tests pass without `PYTHONMALLOC=malloc`.
 
 ## Flags Summary
 
@@ -55,7 +61,7 @@ PYTHONMALLOC=malloc moon test -p Kaida-Amethyst/python/test -F "RC Bug" --target
 | `--target native` | Native target (required for this project) |
 | `--release` | Release mode (needed for ASan on macOS) |
 | `-p <package>` | Specify package to test |
-| `-F <pattern>` | Filter tests by name |
+| `-F <pattern>` | Filter tests by name (glob: `*`, `?`) |
 | `-f <file>` | Filter tests by file |
 | `--build-only` | Build without running |
 | `-u` | Update test expectations |
