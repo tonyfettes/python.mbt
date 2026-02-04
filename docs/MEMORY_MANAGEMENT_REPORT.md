@@ -446,6 +446,56 @@ obj$6499 = _field$7553;
 
 ---
 
+## 8. Automatic Memory Management: Attempted and Reverted
+
+### 8.1 The Attempt
+
+An attempt was made to implement automatic memory management using `moonbit_make_external_object` with a finalizer that calls `Py_DECREF`. The approach:
+
+```
+PyObjectRef (#external, no auto cleanup)
+     ↓
+PyObjectHandle (external object WITH finalizer → calls py_decref)
+     ↓
+PyObject { handle: PyObjectHandle }  (MoonBit struct)
+```
+
+When `PyObject` is freed by MoonBit RC → `PyObjectHandle` RC drops → finalizer calls `py_decref()`.
+
+### 8.2 Why It Failed
+
+MoonBit's RC behavior is **too eager**. When accessing struct fields, the compiler generates code that decrefs the parent struct **before** the returned value is fully used:
+
+```c
+// Generated code for obj_ref():
+_field = obj->handle;        // Extract handle
+moonbit_decref(obj);         // Decref obj -> may free obj -> frees handle
+_tmp = py_object_handle_get(_field);  // Use handle (may be freed!)
+moonbit_decref(_field);      // Triggers finalizer -> Py_DECREF
+return _tmp;                 // Return PyObjectRef (Python object may be freed!)
+```
+
+The handle's finalizer runs **before** we're done using the returned `PyObjectRef`, causing use-after-free crashes.
+
+### 8.3 Attempted Fixes That Didn't Work
+
+1. **Caching py_ref separately**: Stored both `handle` and `py_ref` in `PyObject`. Didn't help - handle still gets freed when PyObject is freed, triggering the finalizer.
+
+2. **Using `#borrow` attribute**: Added `#borrow(handle)` to `py_object_handle_get`. This only affects what happens inside the function, not what the caller does after.
+
+3. **Storing both handle and ref**: Same issue - when PyObject is freed (because it's the last reference), the handle is freed and finalizer runs.
+
+### 8.4 Conclusion
+
+Automatic memory management is **not achievable** with the current MoonBit RC behavior. Manual `drop()` calls remain the only safe approach.
+
+Future possibilities:
+- MoonBit language change: A way to keep struct alive while using returned field values
+- API redesign: Return a tuple `(PyObjectRef, Guard)` where Guard keeps the handle alive
+- MoonBit Drop trait: If MoonBit adds automatic `drop()` calls on scope exit
+
+---
+
 ## Appendix A: Key Source Code References
 
 ### A.1 MoonBit Runtime (moonbit.h)

@@ -85,7 +85,7 @@ pub fn PyDict::new() -> PyDict {
 /// assert_eq(dict.len(), 3);
 /// ```
 pub fn PyDict::len(self : PyDict) -> Int {
-  @cpython.py_dict_size(self.obj_ref()).to_int()
+  @cpython.py_dict_size_h(self.handle()).to_int()
 }
 
 ///|
@@ -105,22 +105,18 @@ pub fn PyDict::len(self : PyDict) -> Int {
 /// inspect(dict.get("four"), content="None")
 /// ```
 pub fn PyDict::get(self : PyDict, key : String) -> PyObjectEnum? {
-  let dict = self.obj_ref()
-  let obj_ref = @cpython.py_dict_get_item_string(dict, key)
-  when(not(obj_ref.is_null()), fn() {
-    @cpython.py_incref(obj_ref) // PyDict_GetItemString returns borrowed reference
-    PyObjectEnum::create_by_ref(obj_ref)
+  let item_handle = @cpython.py_dict_get_item_string_h(self.handle(), key)
+  when(not(@cpython.py_handle_is_null(item_handle)), fn() {
+    PyObject(item_handle) |> PyObjectEnum::create
   })
 }
 
 ///|
 /// Return the elements of the dict by its key, when the key is not string.
 pub fn PyDict::getByObj(self : PyDict, key : PyObject) -> PyObjectEnum? {
-  let dict = self.obj_ref()
-  let obj_ref = @cpython.py_dict_get_item(dict, key.obj_ref())
-  when(not(obj_ref.is_null()), fn() {
-    @cpython.py_incref(obj_ref) // PyDict_GetItem returns borrowed reference
-    PyObjectEnum::create_by_ref(obj_ref)
+  let item_handle = @cpython.py_dict_get_item_h(self.handle(), key.handle())
+  when(not(@cpython.py_handle_is_null(item_handle)), fn() {
+    PyObject(item_handle) |> PyObjectEnum::create
   })
 }
 
@@ -174,10 +170,7 @@ pub fn[V : IsPyObject] PyDict::set(
   key : String,
   val : V,
 ) -> Unit {
-  let dict = self.obj_ref()
-  let val = val.obj_ref()
-  let _ = @cpython.py_dict_set_item_string(dict, key, val)
-
+  let _ = @cpython.py_dict_set_item_string_h(self.handle(), key, val.handle())
 }
 
 ///|
@@ -210,9 +203,8 @@ pub fn[K : IsPyObject, V : IsPyObject] PyDict::setByObj(
   key : K,
   val : V,
 ) -> Unit raise PyRuntimeError {
-  let dict = self.obj_ref()
   @cpython.py_err_clear()
-  let _ = @cpython.py_dict_set_item(dict, key.obj_ref(), val.obj_ref())
+  let _ = @cpython.py_dict_set_item_h(self.handle(), key.handle(), val.handle())
   let e = @cpython.py_err_occurred()
   if not(e.is_null()) {
     @cpython.py_err_clear()
@@ -255,15 +247,14 @@ pub fn[V : IsPyObject] PyDict::op_set(
 /// Check if the dict contains the key. Note that the key is a string.
 /// If the key is not string, use `containsObj` instead.
 pub fn PyDict::contains(self : PyDict, key : String) -> Bool {
-  let dict = self.obj_ref()
-  @cpython.py_dict_contains(dict, PyString::from(key).obj_ref())
+  let key_obj = PyString::from(key)
+  @cpython.py_dict_contains_h(self.handle(), key_obj.handle()) != 0
 }
 
 ///|
 /// Check if the dict contains the key.
 pub fn PyDict::containsObj(self : PyDict, key : PyObject) -> Bool {
-  let dict = self.obj_ref()
-  @cpython.py_dict_contains(dict, key.obj_ref())
+  @cpython.py_dict_contains_h(self.handle(), key.handle()) != 0
 }
 
 ///|
@@ -293,7 +284,8 @@ pub fn PyDict::containsObj(self : PyDict, key : PyObject) -> Bool {
 /// print(dict_keys) # Output: dict_keys(['one', 'two', 'three'])
 /// ```
 pub fn PyDict::keys(self : PyDict) -> PyList {
-  PyList::create_by_ref_unchecked(@cpython.py_dict_keys(self.obj_ref()))
+  let handle = @cpython.py_dict_keys_h(self.handle())
+  PyList::{ obj: PyObject(handle) }
 }
 
 ///|
@@ -323,7 +315,8 @@ pub fn PyDict::keys(self : PyDict) -> PyList {
 /// print(dict_values) # Output: dict_values([1, 2.0, True])
 /// ```
 pub fn PyDict::values(self : PyDict) -> PyList {
-  PyList::create_by_ref_unchecked(@cpython.py_dict_values(self.obj_ref()))
+  let handle = @cpython.py_dict_values_h(self.handle())
+  PyList::{ obj: PyObject(handle) }
 }
 
 ///|
@@ -345,7 +338,8 @@ pub fn PyDict::values(self : PyDict) -> PyList {
 /// inspect(dict.items(), content="[('one', 1), ('two', 2.0), ('three', True)]")
 /// ```
 pub fn PyDict::items(self : PyDict) -> PyList {
-  PyList::create_by_ref_unchecked(@cpython.py_dict_items(self.obj_ref()))
+  let handle = @cpython.py_dict_items_h(self.handle())
+  PyList::{ obj: PyObject(handle) }
 }
 
 ///|

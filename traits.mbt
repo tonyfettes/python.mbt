@@ -15,13 +15,22 @@
 ///|
 pub trait IsPyObject {
   obj(Self) -> PyObject
+  handle(Self) -> @cpython.PyObjectHandle = _
   obj_ref(Self) -> @cpython.PyObjectRef = _
   type_name(Self) -> String = _
 }
 
 ///|
+/// Get the underlying handle for use with handle-aware functions.
+impl IsPyObject with handle(self) {
+  self.obj().0
+}
+
+///|
+/// Get the raw PyObjectRef - WARNING: This can cause use-after-free if handle
+/// is not kept alive. Prefer using handle() with handle-aware functions.
 impl IsPyObject with obj_ref(self) {
-  self.obj().obj
+  @cpython.py_object_handle_get(self.obj().0)
 }
 
 ///|

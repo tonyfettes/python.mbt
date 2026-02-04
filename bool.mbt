@@ -69,7 +69,7 @@ pub fn PyBool::dump(self : PyBool) -> Unit {
 ///
 /// ```python
 /// t = True
-/// 
+///
 /// print(t) # Output: True
 /// ```
 pub fn PyBool::from(value : Bool) -> PyBool {
@@ -91,8 +91,7 @@ pub fn PyBool::from(value : Bool) -> PyBool {
 /// assert_false(f.is_true());
 /// ```
 pub fn PyBool::is_true(self : PyBool) -> Bool {
-  let obj = self.obj_ref()
-  @cpython.py_object_is_true(obj)
+  @cpython.py_object_is_true_h(self.handle())
 }
 
 ///|
@@ -133,6 +132,11 @@ pub fn PyBool::not(self : PyBool) -> PyBool {
   } else {
     return PyBool::from(true)
   }
+}
+
+///|
+pub fn PyBool::drop(self : PyBool) -> Unit {
+  self.obj.drop()
 }
 
 ///|

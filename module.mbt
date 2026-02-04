@@ -179,6 +179,11 @@ pub fn PyModule::get_attr(
 }
 
 ///|
+pub fn PyModule::drop(self : PyModule) -> Unit {
+  self.obj.drop()
+}
+
+///|
 pub impl IsPyObject for PyModule with obj(self) {
   self.obj
 }

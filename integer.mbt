@@ -23,7 +23,7 @@ pub struct PyInteger {
 
 ///|
 /// Create a python integer object from a python object.
-/// If 
+/// If
 pub fn PyInteger::create(obj : PyObject) -> PyInteger raise PyRuntimeError {
   guard obj.is_int() else { raise TypeMismatchError }
   PyInteger::{ obj, }
@@ -75,7 +75,7 @@ pub fn PyInteger::from(value : Int64) -> PyInteger {
 /// assert_eq(i.to_int64(), 42);
 /// ```
 pub fn PyInteger::to_int64(self : PyInteger) -> Int64 {
-  @cpython.py_long_as_long(self.obj_ref())
+  @cpython.py_long_as_long_h(self.handle())
 }
 
 ///|
@@ -88,7 +88,7 @@ pub fn PyInteger::to_int64(self : PyInteger) -> Int64 {
 /// assert_eq(i.to_double(), 42.0);
 /// ```
 pub fn PyInteger::to_double(self : PyInteger) -> Double {
-  @cpython.py_long_as_double(self.obj_ref())
+  @cpython.py_long_as_double_h(self.handle())
 }
 
 ///|

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "cpython": "3.12.8"
+  }
+}

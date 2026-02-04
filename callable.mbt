@@ -69,12 +69,12 @@ pub fn PyCallable::invoke(
   kwargs? : PyDict = PyDict::new(),
   print_err? : Bool = false,
 ) -> PyObjectEnum? raise PyRuntimeError {
-  let obj_ref = if kwargs.len() > 0 {
-    @cpython.py_object_call(self.obj_ref(), args.obj_ref(), kwargs.obj_ref())
+  let result_handle = if kwargs.len() > 0 {
+    @cpython.py_object_call_h(self.handle(), args.handle(), kwargs.handle())
   } else {
-    @cpython.py_object_call_object(self.obj_ref(), args.obj_ref())
+    @cpython.py_object_call_object_h(self.handle(), args.handle())
   }
-  if obj_ref.is_null() {
+  if @cpython.py_handle_is_null(result_handle) {
     let e = @cpython.py_err_occurred()
     if not(e.is_null()) {
       if print_err {
@@ -83,11 +83,17 @@ pub fn PyCallable::invoke(
       @cpython.py_err_clear()
       raise InvokeError
     }
+    return None
   }
-  unless(@cpython.py_none_check(obj_ref), fn() {
-    let obj = PyObject::create(obj_ref)
+  unless(@cpython.py_none_check_h(result_handle), fn() {
+    let obj = PyObject(result_handle)
     PyObjectEnum::create(obj)
   })
+}
+
+///|
+pub fn PyCallable::drop(self : PyCallable) -> Unit {
+  self.obj.drop()
 }
 
 ///|

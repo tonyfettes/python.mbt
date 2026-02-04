@@ -73,7 +73,7 @@ pub fn PyFloat::from(value : Double) -> PyFloat {
 /// assert_eq(f.to_double(), 3.5);
 /// ```
 pub fn PyFloat::to_double(self : PyFloat) -> Double {
-  @cpython.py_float_as_double(self.obj_ref())
+  @cpython.py_float_as_double_h(self.handle())
 }
 
 ///|
@@ -97,7 +97,7 @@ pub impl IsPyObject for PyFloat with obj(self) {
 
 ///|
 pub impl Show for PyFloat with to_string(self) -> String {
-  @cpython.py_object_moonbit_repr(self.obj_ref())
+  @cpython.py_object_repr_h(self.handle())
 }
 
 ///|

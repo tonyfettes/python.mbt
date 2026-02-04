@@ -85,7 +85,7 @@ test {
 /// assert_eq(tuple.len(), 3);
 /// ```
 pub fn PyTuple::len(self : PyTuple) -> UInt64 {
-  @cpython.pytuple_size(self.obj_ref())
+  @cpython.py_tuple_size_h(self.handle())
 }
 
 ///|
@@ -121,9 +121,11 @@ pub fn PyTuple::len(self : PyTuple) -> UInt64 {
 /// print(tuple[2]) # Output: three
 pub fn PyTuple::get(self : PyTuple, idx : Int) -> PyObjectEnum? {
   when(idx >= 0 && idx.to_uint64() < self.len(), fn() {
-    let item = @cpython.pytuple_get_item(self.obj_ref(), idx.to_uint64())
-    @cpython.py_incref(item) // PyTuple_GetItem returns borrowed reference
-    item |> PyObject::create |> PyObjectEnum::create
+    let item_handle = @cpython.py_tuple_get_item_h(
+      self.handle(),
+      idx.to_uint64(),
+    )
+    PyObject(item_handle) |> PyObjectEnum::create
   })
 }
 
@@ -173,13 +175,11 @@ pub fn[T : IsPyObject] PyTuple::set(
   item : T,
 ) -> Unit {
   guard idx >= 0 && idx.to_uint64() < self.len()
-  @cpython.py_incref(item.obj_ref()) // PyTuple_SetItem steals reference
-  let _ = @cpython.pytuple_set_item(
-    self.obj_ref(),
+  let _ = @cpython.py_tuple_set_item_h(
+    self.handle(),
     idx.to_uint64(),
-    item.obj_ref(),
+    item.handle(),
   )
-
 }
 
 ///|

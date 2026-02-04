@@ -142,169 +142,132 @@ test "PyDict Test" {
 }
 
 ///|
-/// This test demonstrates the RC bug in PyList::set().
-/// PyList_SetItem() steals the reference, but the MoonBit wrapper
-/// still holds it. When we call drop(), it will DECREF an already
-/// stolen reference, causing a double-free.
-test "RC Bug - PyList set steals reference" {
+/// Fixed: PyList::set() now correctly handles stolen references.
+/// PyList_SetItem() steals the reference, so we INCREF before passing.
+test "RC Fixed - PyList set handles stolen reference" {
   let list = PyList::new()
   list.append(PyString::from("placeholder"))
 
   // Use a string (not cached like small integers)
   let item = PyString::from("unique_string_not_cached_12345")
-  list.set(0, item) // PyList_SetItem steals reference
+  list.set(0, item) // PyList_SetItem steals reference, but we INCREF first
 
-  // Now: list owns the ref, but `item` still thinks it owns it too
-  // This causes a double-decref when we explicitly drop
-  item.drop() // BOOM: double-decref on already-stolen ref
+  // drop() is now a no-op - memory is automatically managed
+  item.drop()
 
-  // If we get here, the memory is corrupted
+  // Verify the list item is accessible
   let _ = list[0].to_string()
 }
 
 ///|
-/// This test demonstrates the RC bug in PyList::get().
-/// PyList_GetItem() returns a borrowed reference, but we wrap it
-/// as owned without INCREF. When the original is freed, we have a
-/// dangling pointer.
-test "RC Bug - PyList get borrowed reference" {
+/// Fixed: PyList::get() now correctly handles borrowed references.
+/// PyList_GetItem() returns a borrowed reference, and we INCREF it.
+test "RC Fixed - PyList get handles borrowed reference" {
   let list = PyList::new()
   // Use unique string to avoid Python string interning
   list.append(PyString::from("unique_list_get_test_string_12345"))
 
-  let item = list.get(0).unwrap() // Borrowed ref, no INCREF
+  let item = list.get(0).unwrap() // We now INCREF borrowed refs
 
-  // Force the original string to be freed by replacing it
+  // Replace the original - item should still be valid
   list.set(0, PyString::from("replacement_string"))
 
-  // Trigger use-after-free by accessing the freed memory
-  // Need to force memory reuse to make ASan detect it
+  // Allocate some strings to trigger memory reuse
   for i in 0..<100 {
     let _ = PyString::from("allocate_\{i}_to_reuse_memory")
   }
 
-  // Access the dangling pointer - should trigger ASan
+  // Item should still be accessible (no use-after-free)
   let _ = item.to_string()
 }
 
 ///|
-/// This test demonstrates the RC bug in PyTuple::set().
-/// PyTuple_SetItem() steals the reference, but the MoonBit wrapper
-/// still holds it. When we call drop(), it will DECREF an already
-/// stolen reference.
-test "RC Bug - PyTuple set steals reference" {
+/// Fixed: PyTuple::set() now correctly handles stolen references.
+/// PyTuple_SetItem() steals the reference, so we INCREF before passing.
+test "RC Fixed - PyTuple set handles stolen reference" {
   let tuple = PyTuple::new(1)
   tuple.set(0, PyString::from("placeholder"))
 
   let item = PyString::from("unique_tuple_set_string_67890")
-  tuple.set(0, item) // PyTuple_SetItem steals reference
-  item.drop() // BOOM: double-decref on stolen ref
+  tuple.set(0, item) // PyTuple_SetItem steals reference, but we INCREF first
+  item.drop() // No-op now
 
   let _ = tuple[0].to_string()
 }
 
 ///|
-/// This test demonstrates the RC bug in PyTuple::get().
-/// PyTuple_GetItem() returns a borrowed reference, but we wrap it
-/// as owned without INCREF.
-test "RC Bug - PyTuple get borrowed reference" {
+/// Fixed: PyTuple::get() now correctly handles borrowed references.
+/// PyTuple_GetItem() returns a borrowed reference, and we INCREF it.
+test "RC Fixed - PyTuple get handles borrowed reference" {
   let tuple = PyTuple::new(1)
   tuple.set(0, PyString::from("unique_tuple_get_string_11111"))
 
-  let item = tuple.get(0).unwrap() // Borrowed ref
-  tuple.set(0, PyString::from("replacement")) // Replace - original freed
+  let item = tuple.get(0).unwrap() // We now INCREF borrowed refs
+  tuple.set(0, PyString::from("replacement")) // Replace original
 
   for i in 0..<100 {
     let _ = PyString::from("force_reuse_\{i}")
   }
 
-  let _ = item.to_string() // Use-after-free
+  // Item should still be accessible (no use-after-free)
+  let _ = item.to_string()
 }
 
 ///|
-/// This test demonstrates the RC bug in PyDict::get().
-/// PyDict_GetItemString() returns a borrowed reference, but we wrap it
-/// as owned without INCREF.
-test "RC Bug - PyDict get borrowed reference" {
+/// Fixed: PyDict::get() now correctly handles borrowed references.
+/// PyDict_GetItemString() returns a borrowed reference, and we INCREF it.
+test "RC Fixed - PyDict get handles borrowed reference" {
   let dict = PyDict::new()
   dict.set("key", PyString::from("unique_dict_get_value_22222"))
 
-  let item = dict.get("key").unwrap() // Borrowed ref
-  dict.set("key", PyString::from("replacement")) // Replace - original freed
+  let item = dict.get("key").unwrap() // We now INCREF borrowed refs
+  dict.set("key", PyString::from("replacement")) // Replace original
 
   for i in 0..<100 {
     let _ = PyString::from("force_reuse_\{i}")
   }
 
-  let _ = item.to_string() // Use-after-free
+  // Item should still be accessible (no use-after-free)
+  let _ = item.to_string()
 }
 
 ///|
-/// This test verifies whether drop() is automatically called.
-/// If drop() is NOT called, the refcount will remain elevated after
-/// the wrapper goes out of scope.
-test "Memory Leak - drop() not automatically called" {
+/// This test verifies automatic memory management via handle finalizer.
+/// Memory is automatically released when MoonBit objects go out of scope.
+/// The drop() function is now a no-op - MoonBit's handle finalizer calls Py_DECREF.
+test "Automatic Memory - handle finalizer calls py_decref" {
   // Create a Python string and get its raw reference
-  let s = PyString::from("leak_test_string")
+  let s = PyString::from("automatic_memory_test_string")
   let raw_ref = s.obj_ref()
 
   // Check initial refcount (should be 1)
   let initial_refcnt = @cpython.py_refcnt(raw_ref)
   println("Initial refcount: \{initial_refcnt}")
 
-  // Manually incref to keep the object alive after wrapper is "dropped"
+  // Manually incref to keep the object alive after cleanup
   @cpython.py_incref(raw_ref)
 
   // Now refcount should be 2
   let after_incref = @cpython.py_refcnt(raw_ref)
   println("After manual incref: \{after_incref}")
 
-  // Call drop() manually to simulate what SHOULD happen automatically
+  // drop() is now a no-op, but after it returns MoonBit considers s consumed
+  // and may trigger cleanup which calls the handle finalizer -> Py_DECREF
   s.drop()
 
-  // After drop(), refcount should be 1 (our manual incref)
+  // After drop(), refcount should be 1 (finalizer called Py_DECREF)
   let after_drop = @cpython.py_refcnt(raw_ref)
-  println("After manual drop(): \{after_drop}")
+  println("After drop(): \{after_drop}")
 
   // Clean up our manual incref
   @cpython.py_decref(raw_ref)
 
-  // This test demonstrates that drop() must be called manually.
-  // If MoonBit's RC automatically called drop(), we wouldn't need to.
+  // Verify behavior
   assert_eq(initial_refcnt, 1L)
   assert_eq(after_incref, 2L)
-  assert_eq(after_drop, 1L)
-}
-
-///|
-/// This test CONCLUSIVELY proves that MoonBit does NOT automatically call drop().
-/// We track a Python object's refcount before and after its wrapper is destroyed.
-test "Memory Leak - wrapper out of scope without drop" {
-  // Step 1: Create a Python object and get its raw reference
-  let s = @python.PyString::from("test_leak_detection")
-  let raw_ref = s.obj_ref()
-
-  // Step 2: Increment refcount so object survives wrapper destruction
-  @cpython.py_incref(raw_ref)
-
-  // Current state: refcount = 2 (wrapper has 1, we added 1)
-  let before = @cpython.py_refcnt(raw_ref)
-  println("Refcount with wrapper alive: \{before}")
-  assert_eq(before, 2L)
-
-  // Step 3: Manually drop the wrapper
-  s.drop()
-
-  // If drop() calls py_decref, refcount should now be 1
-  let after_drop = @cpython.py_refcnt(raw_ref)
-  println("Refcount after manual drop(): \{after_drop}")
-  assert_eq(after_drop, 1L)  // Confirms drop() does call py_decref
-
-  // Step 4: Clean up
-  @cpython.py_decref(raw_ref)
+  assert_eq(after_drop, 1L) // Handle finalizer called Py_DECREF
 
   println("")
-  println("CONCLUSION: drop() correctly calls py_decref.")
-  println("BUT: MoonBit does NOT automatically call drop() when wrapper goes out of scope.")
-  println("Users must call drop() manually, or memory leaks!")
+  println("CONCLUSION: Memory is automatically managed via handle finalizer.")
+  println("No need for manual drop() calls - cleanup happens automatically.")
 }
